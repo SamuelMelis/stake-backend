@@ -60,6 +60,20 @@ app.get('/api/user-profile', async (req, res) => {
         res.status(500).json({ message: "Failed to fetch user profile.", details: error.message });
     }
 });
+// index.js (add this new endpoint)
+
+// GET /api/bet-history
+// Reads the bet history from our local database.
+app.get('/api/bet-history', async (req, res) => {
+    try {
+        const db = JSON.parse(await fs.readFile(DB_PATH));
+        // We'll send the history in reverse order so newest bets are first.
+        res.json(db.history.reverse());
+    } catch (error) {
+        console.error("Error in /api/bet-history:", error.message);
+        res.status(500).json({ message: "Failed to fetch bet history." });
+    }
+});
 
 // The Mini App calls this to get the current streak and last bet status.
 app.get('/api/status', async (req, res) => {
