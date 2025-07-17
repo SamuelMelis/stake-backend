@@ -27,6 +27,40 @@ const stakeApi = axios.create({
 // --- API ENDPOINTS ---
 
 // GET /api/status
+// index.js (add this new endpoint)
+
+// GET /api/user-profile
+// Fetches user's name, profile picture, and balances from Stake.
+app.get('/api/user-profile', async (req, res) => {
+    try {
+        // This GraphQL query asks for the user's details and balances all at once.
+        const response = await stakeApi.post('', {
+            query: `query { currentUser { id name profile { avatarUrl } balances { available { amount currency } } } }`
+        });
+
+        const user = response.data.data.currentUser;
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Find the USDT balance from the list of all currency balances.
+        const usdtBalance = user.balances.find(b => b.available.currency === 'usdt');
+
+        // Prepare a clean response object for the frontend.
+        const userProfile = {
+            name: user.name,
+            avatarUrl: user.profile.avatarUrl,
+            usdt: usdtBalance ? usdtBalance.available.amount : 0 // Show 0 if no USDT balance exists
+        };
+
+        res.json(userProfile);
+
+    } catch (error) {
+        console.error("Error in /api/user-profile:", error.message);
+        res.status(500).json({ message: "Failed to fetch user profile.", details: error.message });
+    }
+});
+
 // The Mini App calls this to get the current streak and last bet status.
 app.get('/api/status', async (req, res) => {
   const db = JSON.parse(await fs.readFile(DB_PATH));
